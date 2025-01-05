@@ -1,11 +1,13 @@
 plugins {
     id 'java'
-    id 'application'
+    id 'maven-publish'
 }
+
+group = 'io.kay.mysql.binlogkafka'
+version = '1.0.2' // Updated version
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -16,4 +18,37 @@ dependencies {
     implementation 'org.json:json:20241224'
 }
 
-mainClassName = 'io.kkay.mysql.binlogkafka.App'
+tasks.jar {
+    manifest {
+        attributes(
+                'Main-Class': 'io.kkay.mysql.binlogkafka.App'
+        )
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    archiveBaseName.set('mysql-binlog-kafka')
+    archiveVersion.set(version)
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = 'io.kay.mysql.binlogkafka'
+            artifactId = 'mysql-binlog-kafka'
+            version = '1.0.2' // Updated version
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/kaykay2208/mysql-binlog-kafka")
+            credentials {
+                username = System.getenv ("GITHUB_NAME")
+                password = System.getenv ("GITHUB_TOKEN")
+            }
+        }
+    }
+}

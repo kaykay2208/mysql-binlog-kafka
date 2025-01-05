@@ -9,6 +9,8 @@ import io.kkay.mysql.binlogkafka.service.MySQLBinlogService;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 
+import com.github.shyiko.mysql.binlog.BinaryLogClient;
+
 public class App {
 
     public static void main(String[] args) {
@@ -24,7 +26,7 @@ public class App {
         KafkaProducerService kafkaProducerService = new KafkaProducerService(kafkaProducer, kafkaTopic);
 
 
-        var binlogClient = MySQLBinlogConfig.createBinlogClient(mysqlHost, mysqlPort, mysqlUser, mysqlPassword);
+        BinaryLogClient binlogClient = MySQLBinlogConfig.createBinlogClient(mysqlHost, mysqlPort, mysqlUser, mysqlPassword);
         BinlogEventListener listener = new BinlogEventListener(kafkaProducerService);
         MySQLBinlogService binlogService = new MySQLBinlogService(binlogClient, listener);
 
