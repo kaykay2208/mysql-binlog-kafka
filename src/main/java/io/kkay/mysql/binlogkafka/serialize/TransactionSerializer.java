@@ -22,10 +22,19 @@ public class TransactionSerializer
 	{
 
 		JSONObject json = new JSONObject();
+		json.put("schema" , tableMeta.entrySet().stream().findFirst().get().getValue().getDatabase());
 		for(Event event : transactionEvents)
 		{
-				JSONObject eventJson = serializeEvent(event,tableMeta);
-				json.put(String.valueOf(event.getHeader().getTimestamp()) , eventJson);
+			JSONObject eventJson = serializeEvent(event , tableMeta);
+			if(!json.has(String.valueOf(event.getHeader().getTimestamp())))
+			{
+				JSONArray events = new JSONArray().put(eventJson);
+				json.put(String.valueOf(event.getHeader().getTimestamp()) , events);
+			}
+			else
+			{
+				json.getJSONArray(String.valueOf(event.getHeader().getTimestamp())).put(eventJson);
+			}
 		}
 		return json.toString();
 	}

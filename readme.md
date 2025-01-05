@@ -7,7 +7,7 @@ The  data is represented in a JSON format with the following structure:
 
 ```json
 {
-    "timestamp": {
+    "timestamp": [{
         "rows": [
             {
                 "v": {
@@ -20,5 +20,6 @@ The  data is represented in a JSON format with the following structure:
         ],
         "table": "<table_name>",
         "O": "<operation>"
-    }
+    }],
+    "schema":<schema_name>
 }
