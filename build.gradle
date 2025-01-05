@@ -1,0 +1,19 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.12'
+    implementation 'mysql:mysql-connector-java:8.0.32'
+    implementation 'com.zendesk:mysql-binlog-connector-java:0.30.1'
+    implementation 'org.apache.kafka:kafka-clients:3.5.0'
+    implementation 'org.json:json:20241224'
+}
+
+mainClassName = 'io.kkay.mysql.binlogkafka.App'
