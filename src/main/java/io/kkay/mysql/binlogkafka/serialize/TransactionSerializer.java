@@ -1,9 +1,18 @@
 package io.kkay.mysql.binlogkafka.serialize;
 
+import io.kkay.mysql.binlogkafka.meta.TableMetadata;
+
+import static io.kkay.mysql.binlogkafka.meta.MySQLBinlogMetadataFetcher.getMetadata;
+
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -12,6 +21,7 @@ import org.json.JSONObject;
 import com.github.shyiko.mysql.binlog.event.DeleteRowsEventData;
 import com.github.shyiko.mysql.binlog.event.Event;
 import com.github.shyiko.mysql.binlog.event.EventData;
+import com.github.shyiko.mysql.binlog.event.EventHeaderV4;
 import com.github.shyiko.mysql.binlog.event.TableMapEventData;
 import com.github.shyiko.mysql.binlog.event.UpdateRowsEventData;
 import com.github.shyiko.mysql.binlog.event.WriteRowsEventData;
@@ -22,10 +32,11 @@ public class TransactionSerializer
 	{
 
 		JSONObject json = new JSONObject();
-		json.put("schema" , tableMeta.entrySet().stream().findFirst().get().getValue().getDatabase());
+		String schema=tableMeta.entrySet().stream().findFirst().get().getValue().getDatabase();
+		json.put("schema" , schema);
 		for(Event event : transactionEvents)
 		{
-			JSONObject eventJson = serializeEvent(event , tableMeta);
+			JSONObject eventJson = serializeEvent(event , tableMeta,schema);
 			if(!json.has(String.valueOf(event.getHeader().getTimestamp())))
 			{
 				JSONArray events = new JSONArray().put(eventJson);
@@ -39,17 +50,20 @@ public class TransactionSerializer
 		return json.toString();
 	}
 
-	private static JSONObject serializeEvent (Event event , Map <Long, TableMapEventData> tableMeta)
+	private static JSONObject serializeEvent (Event event , Map <Long, TableMapEventData> tableMeta , String schema)
 	{
 		JSONObject json = new JSONObject();
 
 		EventData data = event.getData();
+
 		if(data instanceof WriteRowsEventData)
 		{
 			json.put(Constants.OPERATION , Constants.CREATE);
-			json.put("table", tableMeta.get(((WriteRowsEventData)event.getData()).getTableId()).getTable());
+			String table = tableMeta.get(((WriteRowsEventData) event.getData()).getTableId()).getTable();
+			TableMetadata metadata = getMetadata("localhost" , schema , table);
+			json.put("table" , table);
 			JSONArray rows = new JSONArray();
-			for(Object[] row : ((WriteRowsEventData) data).getRows())
+			for(Serializable[] row : ((WriteRowsEventData) data).getRows())
 			{
 				JSONObject values = new JSONObject();
 				JSONObject datas = new JSONObject();
@@ -57,17 +71,25 @@ public class TransactionSerializer
 				List <Integer> indexes = affectedColumns.stream().boxed().collect(Collectors.toList());
 				for(Integer index : indexes)
 				{
-					values.put(String.valueOf(index) , row[index]);
+					values.put(metadata.getColumnName(index) , translate(row[index]));
 				}
-				datas.put("v", values);
+				datas.put("v" , values);
+				JSONObject pk = new JSONObject();
+				for(Integer pk1 : metadata.getPrimaryKeyIndexes())
+				{
+					pk.put(metadata.getColumnName(pk1) , translate(row[pk1]));
+				}
+				datas.put("pk" , pk);
 				rows.put(datas);
 			}
-			json.put("rows",rows);
+			json.put("rows" , rows);
 		}
 		else if(data instanceof UpdateRowsEventData)
 		{
 			json.put(Constants.OPERATION , Constants.UPDATE);
-			json.put("table", tableMeta.get(((UpdateRowsEventData)event.getData()).getTableId()).getTable());
+			String table = tableMeta.get(((UpdateRowsEventData) event.getData()).getTableId()).getTable();
+			TableMetadata metadata = getMetadata("localhost" , schema , table);
+			json.put("table" , table);
 			JSONObject datas = new JSONObject();
 			JSONArray rows = new JSONArray();
 			for(Map.Entry <Serializable[], Serializable[]> row : ((UpdateRowsEventData) data).getRows())
@@ -78,21 +100,35 @@ public class TransactionSerializer
 				List <Integer> indexes = affectedColumns.stream().boxed().collect(Collectors.toList());
 				for(Integer index : indexes)
 				{
-					values.put(String.valueOf(index) , row.getValue()[index]);
-					oldValues.put(String.valueOf(index) , row.getKey()[index]);
+					String oldval = translate(row.getKey()[index]);
+					String newval = translate(row.getValue()[index]);
+					if((oldval == null && newval == null) || (oldval != null && oldval.equals(newval)))
+					{
+						continue;
+					}
+					values.put(metadata.getColumnName(index) , newval);
+					oldValues.put(metadata.getColumnName(index) , oldval);
 				}
 				datas.put("v" , values);
 				datas.put("ov" , oldValues);
+				JSONObject pk = new JSONObject();
+				for(Integer pk1 : metadata.getPrimaryKeyIndexes())
+				{
+					pk.put(metadata.getColumnName(pk1) , translate(row.getKey()[pk1]));
+				}
+				datas.put("pk" , pk);
 				rows.put(datas);
 			}
-			json.put("rows",rows);
+			json.put("rows" , rows);
 		}
 		else
 		{
 			json.put(Constants.OPERATION , Constants.DELETE);
-			json.put("table", tableMeta.get(((DeleteRowsEventData)event.getData()).getTableId()).getTable());
+			String table = tableMeta.get(((DeleteRowsEventData) event.getData()).getTableId()).getTable();
+			TableMetadata metadata = getMetadata("localhost" , schema , table);
+			json.put("table" , table);
 			JSONArray rows = new JSONArray();
-			for(Object[] row : ((DeleteRowsEventData) data).getRows())
+			for(Serializable[] row : ((DeleteRowsEventData) data).getRows())
 			{
 				JSONObject values = new JSONObject();
 				JSONObject datas = new JSONObject();
@@ -100,14 +136,46 @@ public class TransactionSerializer
 				List <Integer> indexes = affectedColumns.stream().boxed().collect(Collectors.toList());
 				for(Integer index : indexes)
 				{
-					values.put(String.valueOf(index) , row[index]);
+					values.put(String.valueOf(index) , translate(row[index]));
 				}
-				datas.put("ov", values);
+				JSONObject pk = new JSONObject();
+				for(Integer pk1 : metadata.getPrimaryKeyIndexes())
+				{
+					pk.put(metadata.getColumnName(pk1) , translate(row[pk1]));
+				}
+				datas.put("pk" , pk);
+				datas.put("ov" , values);
 				rows.put(datas);
 			}
-			json.put("rows",rows);
+			json.put("rows" , rows);
 		}
 
 		return json;
+	}
+
+	private static String timestamp2string (long time)
+	{
+		return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(time));
+	}
+
+	private static String translate (Serializable c)
+	{
+		if(c == null)
+		{
+			return null;
+		}
+		else if(c instanceof byte[])
+		{
+			return new String((byte[]) c , StandardCharsets.UTF_8);
+		}
+		else if(c instanceof Timestamp)
+		{
+			return (((Timestamp) c).getTime())+"";
+		}
+		else if(c instanceof Date)
+		{
+			return (((Date) c).getTime())+"";
+		}
+		return c.toString();
 	}
 }

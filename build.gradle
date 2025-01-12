@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'io.kay.mysql.binlogkafka'
-version = '1.0.3' // Updated version
+version = '1.0.4' // Updated version
 
 repositories {
     mavenCentral()
@@ -16,6 +16,7 @@ dependencies {
     implementation 'com.zendesk:mysql-binlog-connector-java:0.30.1'
     implementation 'org.apache.kafka:kafka-clients:3.5.0'
     implementation 'org.json:json:20241224'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
 }
 
 tasks.jar {
@@ -38,7 +39,7 @@ publishing {
             from components.java
             groupId = 'io.kay.mysql.binlogkafka'
             artifactId = 'mysql-binlog-kafka'
-            version = '1.0.3' // Updated version
+            version = '1.0.4' // Updated version
         }
     }
     repositories {
