@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'io.kay.mysql.binlogkafka'
-version = '1.0.5' // Updated version
+version = '1.0.6' // Updated version
 
 repositories {
     mavenCentral()
@@ -39,7 +39,7 @@ publishing {
             from components.java
             groupId = 'io.kay.mysql.binlogkafka'
             artifactId = 'mysql-binlog-kafka'
-            version = '1.0.5' // Updated version
+            version = '1.0.6' // Updated version
         }
     }
     repositories {
