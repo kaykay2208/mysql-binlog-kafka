@@ -2,6 +2,7 @@ package io.kkay.mysql.binlogkafka.serialize;
 
 import io.kkay.mysql.binlogkafka.meta.TableMetadata;
 
+import static io.kkay.mysql.binlogkafka.App.MYSQL_HOST;
 import static io.kkay.mysql.binlogkafka.meta.MySQLBinlogMetadataFetcher.getMetadata;
 
 import java.io.Serializable;
@@ -60,7 +61,7 @@ public class TransactionSerializer
 		{
 			json.put(Constants.OPERATION , Constants.CREATE);
 			String table = tableMeta.get(((WriteRowsEventData) event.getData()).getTableId()).getTable();
-			TableMetadata metadata = getMetadata("localhost" , schema , table);
+			TableMetadata metadata = getMetadata(MYSQL_HOST , schema , table);
 			json.put("table" , table);
 			JSONArray rows = new JSONArray();
 			for(Serializable[] row : ((WriteRowsEventData) data).getRows())
@@ -88,7 +89,7 @@ public class TransactionSerializer
 		{
 			json.put(Constants.OPERATION , Constants.UPDATE);
 			String table = tableMeta.get(((UpdateRowsEventData) event.getData()).getTableId()).getTable();
-			TableMetadata metadata = getMetadata("localhost" , schema , table);
+			TableMetadata metadata = getMetadata(MYSQL_HOST , schema , table);
 			json.put("table" , table);
 			JSONObject datas = new JSONObject();
 			JSONArray rows = new JSONArray();
@@ -125,7 +126,7 @@ public class TransactionSerializer
 		{
 			json.put(Constants.OPERATION , Constants.DELETE);
 			String table = tableMeta.get(((DeleteRowsEventData) event.getData()).getTableId()).getTable();
-			TableMetadata metadata = getMetadata("localhost" , schema , table);
+			TableMetadata metadata = getMetadata(MYSQL_HOST, schema , table);
 			json.put("table" , table);
 			JSONArray rows = new JSONArray();
 			for(Serializable[] row : ((DeleteRowsEventData) data).getRows())

@@ -12,6 +12,8 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
       KAFKA_TOPIC: "mysql-binlog-topic"
     restart: unless-stopped
+    volumes:
+      - $HOME/mysql-binlog-kafka-data/hostip:/app/hostip
     networks:
       - kafka_kafka-net
 

@@ -1,5 +1,10 @@
 package io.kkay.mysql.binlogkafka.meta;
 
+import static io.kkay.mysql.binlogkafka.App.MYSQL_HOST;
+import static io.kkay.mysql.binlogkafka.App.MYSQL_PASSWORD;
+import static io.kkay.mysql.binlogkafka.App.MYSQL_PORT;
+import static io.kkay.mysql.binlogkafka.App.MYSQL_USER;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -84,9 +89,10 @@ public class MySQLBinlogMetadataFetcher {
 	}
 
 	private static void saveMetadata(String hostIp, String database, String table) {
-		String url = "jdbc:mysql://localhost:3306/" + database;
-		String username = "root";
-		String password = "";
+		String url = "jdbc:mysql://" + MYSQL_HOST + ":" + MYSQL_PORT + "/" + database
+			+ "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+		String username =MYSQL_USER;
+		String password = MYSQL_PASSWORD;
 
 
 		Map<Integer,String> indexColumnMap = new HashMap();

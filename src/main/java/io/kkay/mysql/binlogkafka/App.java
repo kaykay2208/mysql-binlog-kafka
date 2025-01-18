@@ -13,29 +13,32 @@ import com.github.shyiko.mysql.binlog.BinaryLogClient;
 
 public class App {
 
+
+    public static final String MYSQL_HOST;
+    public static final String MYSQL_PORT;
+    public static final String MYSQL_USER;
+    public static final String MYSQL_PASSWORD;
+    public static final String KAFKA_BOOTSTRAP_SERVERS;
+    public static final String KAFKA_TOPIC;
+
+
+    static {
+        MYSQL_HOST = System.getenv("MYSQL_HOST") != null ? System.getenv("MYSQL_HOST") : "localhost";
+        MYSQL_PORT = System.getenv("MYSQL_PORT") != null ? System.getenv("MYSQL_PORT") : "3306";
+        MYSQL_USER = System.getenv("MYSQL_USER") != null ? System.getenv("MYSQL_USER") : "root";
+        MYSQL_PASSWORD = System.getenv("MYSQL_PASSWORD") != null ? System.getenv("MYSQL_PASSWORD") : "";
+        KAFKA_BOOTSTRAP_SERVERS = System.getenv("KAFKA_BOOTSTRAP_SERVERS") != null ? System.getenv("KAFKA_BOOTSTRAP_SERVERS") : "localhost:9092";
+        KAFKA_TOPIC = System.getenv("KAFKA_TOPIC") != null ? System.getenv("KAFKA_TOPIC") : "mysql-binlog-topic";
+    }
     public static void main(String[] args) {
-        String mysqlHost = System.getenv("MYSQL_HOST"); // MySQL host
-        String mysqlPort = System.getenv("MYSQL_PORT"); // MySQL port
-        String mysqlUser = System.getenv("MYSQL_USER"); // MySQL user
-        String mysqlPassword = System.getenv("MYSQL_PASSWORD"); // MySQL password
-
-        String kafkaBootstrapServers = System.getenv("KAFKA_BOOTSTRAP_SERVERS"); // Kafka bootstrap servers
-        String kafkaTopic = System.getenv("KAFKA_TOPIC"); // Kafka topic
-
-        // Default values in case environment variables are not set
-        if (mysqlHost == null) mysqlHost = "localhost";
-        if (mysqlPort == null) mysqlPort = "3306";
-        if (mysqlUser == null) mysqlUser = "root";
-        if (mysqlPassword == null) mysqlPassword = "";
-        if (kafkaBootstrapServers == null) kafkaBootstrapServers = "localhost:9092";
-        if (kafkaTopic == null) kafkaTopic = "mysql-binlog-topic";
 
 
-        KafkaProducer<String, String> kafkaProducer = KafkaConfig.createKafkaProducer(kafkaBootstrapServers);
-        KafkaProducerService kafkaProducerService = new KafkaProducerService(kafkaProducer, kafkaTopic);
+
+        KafkaProducer<String, String> kafkaProducer = KafkaConfig.createKafkaProducer(KAFKA_BOOTSTRAP_SERVERS);
+        KafkaProducerService kafkaProducerService = new KafkaProducerService(kafkaProducer, KAFKA_TOPIC);
 
 
-        BinaryLogClient binlogClient = MySQLBinlogConfig.createBinlogClient(mysqlHost, Integer.valueOf(mysqlPort), mysqlUser, mysqlPassword);
+        BinaryLogClient binlogClient = MySQLBinlogConfig.createBinlogClient(MYSQL_HOST, Integer.valueOf(MYSQL_PORT), MYSQL_USER, MYSQL_PASSWORD);
         BinlogEventListener listener = new BinlogEventListener(kafkaProducerService);
         MySQLBinlogService binlogService = new MySQLBinlogService(binlogClient, listener);
 
