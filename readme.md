@@ -11,10 +11,16 @@ The  data is represented in a JSON format with the following structure:
         "rows": [
             {
                 "v": {
-                    "0": <new value 1>,
-                    "1": <new value 2>,
-                    "3": <new value 3>,
-                    "7": <new value 4>
+                    "columnName0": <new value 1>,
+                    "columnName1": <new value 2>,
+                    "columnName4": <new value 3>,
+                    "columnName7": <new value 4>
+                },
+                "ov": {
+                    "columnName0": <old value 1>,
+                    "columnName1": <old value 2>,
+                    "columnName4": <old value 3>,
+                    "columnName7": <old value 4>
                 }
             }
         ],
